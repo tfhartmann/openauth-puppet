@@ -33,7 +33,8 @@ class openauth {
     notify   => Service["radiusd"],
     require  => Package["freeradius"],
   }
-
+  
+  #Defines wha client systems can talk to radius (login nodes, vpn, etc)
   file {"/etc/raddb/clients.conf":
     owner => "root",
     group => "root",
@@ -60,7 +61,8 @@ class openauth {
     notify => Service["radiusd"],
     require => Package["freeradius"],
   }
-
+  
+  #Radius Pam config to read from secrects file(s) using googleauthenticator
   file {"/etc/pam.d/radiusd":
     owner => "root",
     group => "root",
@@ -70,9 +72,12 @@ class openauth {
 
   package {"google-authenticator":
     #this is RC-built from git clone, but otherwise stock
+    #From http://code.google.com/p/google-authenticator/source/checkout
     ensure => "0.0.0-20120412",
   }
 
+  #Hadir is a custom Highly Available Script for a network mount.
+  #Available at: 
   package {"hadir":
     ensure => latest,
   }
@@ -95,6 +100,7 @@ class openauth {
     require => Package["hadir"],
   }
 
+  #Setup local files for failover/HA of the radius service
   file {"/n/openauth_secrets.live":
     ensure => link,
     replace => false,
@@ -114,7 +120,7 @@ class openauth {
   }
 }
 
-#openauth radius servers needs this, as does iliadweb01, but not openauth radius clients like rclogin*
+#openauth radius servers needs this, as does web-provisioning-frontend, but not openauth radius clients like login systems/vpn
 class openauth::openauth_mount {
   file { "/n/openauth":
     ensure => directory,
