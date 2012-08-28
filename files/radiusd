@@ -1,0 +1,5 @@
+#%PAM-1.0
+###auth       include      system-auth
+
+auth     requisite  pam_google_authenticator.so user=apache secret=/n/openauth_secrets.live/default/${USER}/s
+account  required   pam_permit.so
