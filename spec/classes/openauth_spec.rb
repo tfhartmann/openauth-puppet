@@ -7,7 +7,7 @@ describe 'openauth', :type => :class do
     describe "openauth class with no parameters and no inlcudes of other classes" do
       let(:params) { { } }
         it {
-          should_not compile
+          should contain_class('openauth')
         }
     end
   end
