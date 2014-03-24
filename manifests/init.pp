@@ -1,7 +1,7 @@
 #Class to setup Openauth radius servers and other administrative bits
 class openauth {
   #Include the mount, needed for sharing keys between openauth servers for failover etc.
-  include openauth_mount
+  class { 'openauth_mount': }
 
   package {'freeradius':
     ensure => installed,
