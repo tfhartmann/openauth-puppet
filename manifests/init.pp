@@ -6,8 +6,8 @@ class openauth {
     ensure => installed,
   }
   service { 'httpd':
-    ensure => stopped,
-    enable => false,
+    ensure  => stopped,
+    enable  => false,
     require => Package['httpd'],
   }
 
@@ -15,37 +15,37 @@ class openauth {
     ensure => installed,
   }
   file { '/etc/raddb/clients.conf':
-    source => 'puppet:///modules/openauth/clients.conf',
-    owner => 'root',
-    group => 'root',
-    notify => Service['radiusd'],
+    source  => 'puppet:///modules/openauth/clients.conf',
+    owner   => 'root',
+    group   => 'root',
+    notify  => Service['radiusd'],
     require => Package['freeradius'],
   }
   file { '/etc/raddb/proxy.conf':
-    source => 'puppet:///modules/openauth/proxy.conf',
-    owner => 'root',
-    group => 'root',
-    notify => Service['radiusd'],
+    source  => 'puppet:///modules/openauth/proxy.conf',
+    owner   => 'root',
+    group   => 'root',
+    notify  => Service['radiusd'],
     require => Package['freeradius'],
   }
   file { '/etc/raddb/radiusd.conf':
     content => template('openauth/radiusd.conf.erb'),
-    owner => 'root',
-    group => 'root',
-    notify => Service['radiusd'],
+    owner   => 'root',
+    group   => 'root',
+    notify  => Service['radiusd'],
     require => Package['freeradius'],
   }
 
   file { '/etc/pam.d/radiusd':
     source => 'puppet:///modules/openauth/radiusd',
-    owner => 'root',
-    group => 'root',
+    owner  => 'root',
+    group  => 'root',
   }
   file { '/etc/raddb/users':
-    source => 'puppet:///modules/openauth/users',
-    owner => 'root',
-    group => 'root',
-    notify => Service['radiusd'],
+    source  => 'puppet:///modules/openauth/users',
+    owner   => 'root',
+    group   => 'root',
+    notify  => Service['radiusd'],
     require => [
       Package['freeradius'],
       File['/etc/pam.d/radiusd'],
@@ -53,8 +53,8 @@ class openauth {
   }
 
   service { 'radiusd':
-    ensure => running,
-    enable => true,
+    ensure  => running,
+    enable  => true,
     require => [
       Package['freeradius'],
       File['/etc/raddb/clients.conf'],
@@ -65,14 +65,14 @@ class openauth {
   }
 
   file { '/etc/logrotate.d/radiusd':
-    owner => 'root',
-    group => 'root',
+    owner  => 'root',
+    group  => 'root',
     source => 'puppet:///modules/openauth/radius_logrotate',
     notify => Service['radiusd'],
   }
 
+  #this is RC-built from git clone, but otherwise stock
   package { 'google-authenticator':
-    #this is RC-built from git clone, but otherwise stock
     ensure => '0.0.0-20120412',
   }
 
@@ -80,31 +80,31 @@ class openauth {
     ensure => latest,
   }
   file { '/etc/hadird.conf':
-    source => 'puppet:///modules/openauth/hadird.conf',
-    owner => 'root',
-    group => 'root',
-    notify => Service['hadird'],
+    source  => 'puppet:///modules/openauth/hadird.conf',
+    owner   => 'root',
+    group   => 'root',
+    notify  => Service['hadird'],
     require => Package['hadir'],
   }
   file { '/n/openauth_secrets.live':
-    ensure => link,
+    ensure  => link,
     replace => false,
-    target => '/n/openauth/secrets',
+    target  => '/n/openauth/secrets',
     require => Mount['/n/openauth'],
   }
   file { '/n/openauth.local':
-    ensure => directory,
+    ensure  => directory,
     replace => false,
-    backup => false,
+    backup  => false,
   }
   file { '/n/openauth.local/secrets':
-    ensure => directory,
+    ensure  => directory,
     replace => false,
-    backup => false,
+    backup  => false,
   }
   service { 'hadird':
-    ensure => running,
-    enable => true,
+    ensure  => running,
+    enable  => true,
     require => [
       Package['hadir'],
       File['/etc/hadird.conf'],

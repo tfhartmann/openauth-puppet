@@ -4,11 +4,11 @@ class openauth::mount {
     backup => false,
   }
   mount { '/n/openauth':
-    ensure => mounted,
-    device => 'rcstore:/ifs/rc_admin/openauth',
-    fstype => 'nfs',
+    ensure  => mounted,
+    device  => 'rcstore:/ifs/rc_admin/openauth',
+    fstype  => 'nfs',
     options => 'rw,nfsvers=3,noacl,soft,intr',
-    atboot => true,
+    atboot  => true,
     require => File['/n/openauth'],
   }
 }
