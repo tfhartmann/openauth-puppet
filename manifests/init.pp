@@ -1,137 +1,115 @@
-#Class to setup Openauth radius servers and other administrative bits
+# Set up OpenAuth RADIUS servers that serve two-factor auth.
 class openauth {
-  #Include the mount, needed for sharing keys between openauth servers for failover etc.
-  include openauth_mount
+  include openauth::mount
 
-  package {"freeradius":
+  package { 'httpd':
     ensure => installed,
   }
-  package {"httpd":
+  service { 'httpd':
+    ensure => stopped,
+    enable => false,
+    require => Package['httpd'],
+  }
+
+  package { 'freeradius':
     ensure => installed,
   }
-  service {"httpd":
-    enable  => false,
-    ensure  => stopped,
-    require => Package["httpd"],
+  file { '/etc/raddb/clients.conf':
+    source => 'puppet:///modules/openauth/clients.conf',
+    owner => 'root',
+    group => 'root',
+    notify => Service['radiusd'],
+    require => Package['freeradius'],
   }
-  service {"radiusd":
-    enable => true,
-    ensure => running,
+  file { '/etc/raddb/proxy.conf':
+    source => 'puppet:///modules/openauth/proxy.conf',
+    owner => 'root',
+    group => 'root',
+    notify => Service['radiusd'],
+    require => Package['freeradius'],
+  }
+  file { '/etc/raddb/radiusd.conf':
+    content => template('openauth/radiusd.conf.erb'),
+    owner => 'root',
+    group => 'root',
+    notify => Service['radiusd'],
+    require => Package['freeradius'],
+  }
+
+  file { '/etc/pam.d/radiusd':
+    source => 'puppet:///modules/openauth/radiusd',
+    owner => 'root',
+    group => 'root',
+  }
+  file { '/etc/raddb/users':
+    source => 'puppet:///modules/openauth/users',
+    owner => 'root',
+    group => 'root',
+    notify => Service['radiusd'],
     require => [
-      Package["freeradius"],
-      File["/etc/raddb/radiusd.conf"],
-      File["/etc/raddb/clients.conf"],
-      ],
+      Package['freeradius'],
+      File['/etc/pam.d/radiusd'],
+    ],
   }
 
-  file {"/etc/raddb/radiusd.conf":
-    path     => "/etc/raddb/radiusd.conf",
-    owner    => "root",
-    group    => "root",
-    mode     => 0644,
-    content  => template("openauth/radiusd.conf.erb"),
-    notify   => Service["radiusd"],
-    require  => Package["freeradius"],
-  }
-  
-  #Defines wha client systems can talk to radius (login nodes, vpn, etc)
-  file {"/etc/raddb/clients.conf":
-    owner => "root",
-    group => "root",
-    mode => 0644,
-    source => "puppet:///modules/openauth/clients.conf",
-    notify => Service["radiusd"],
-    require => Package["freeradius"],
+  service { 'radiusd':
+    ensure => running,
+    enable => true,
+    require => [
+      Package['freeradius'],
+      File['/etc/raddb/clients.conf'],
+      File['/etc/raddb/proxy.conf'],
+      File['/etc/raddb/radiusd.conf'],
+      File['/etc/raddb/users'],
+    ],
   }
 
-  file {"/etc/raddb/users":
-    owner => "root",
-    group => "root",
-    mode => 0644,
-    source => "puppet:///modules/openauth/users",
-    notify => Service["radiusd"],
-    require => Package["freeradius"],
+  file { '/etc/logrotate.d/radiusd':
+    owner => 'root',
+    group => 'root',
+    source => 'puppet:///modules/openauth/radius_logrotate',
+    notify => Service['radiusd'],
   }
 
-  file {"/etc/raddb/proxy.conf":
-    owner => "root",
-    group => "root",
-    mode => 0644,
-    source => "puppet:///modules/openauth/proxy.conf",
-    notify => Service["radiusd"],
-    require => Package["freeradius"],
-  }
-  
-  #Radius Pam config to read from secrects file(s) using googleauthenticator
-  file {"/etc/pam.d/radiusd":
-    owner => "root",
-    group => "root",
-    mode => 0644,
-    source => "puppet:///modules/openauth/radiusd",
-  }
-
-  package {"google-authenticator":
+  package { 'google-authenticator':
     #this is RC-built from git clone, but otherwise stock
-    #From http://code.google.com/p/google-authenticator/source/checkout
-    ensure => "0.0.0-20120412",
+    ensure => '0.0.0-20120412',
   }
 
-  #Hadir is a custom Highly Available Script for a network mount.
-  #Available at: 
-  package {"hadir":
+  package { 'hadir':
     ensure => latest,
   }
-  
-  service {"hadird":
-    enable => true,
-    ensure => running,
-    require => [
-      Package["hadir"],
-      File["/etc/hadird.conf"],
-      ],
+  file { '/etc/hadird.conf':
+    source => 'puppet:///modules/openauth/hadird.conf',
+    owner => 'root',
+    group => 'root',
+    notify => Service['hadird'],
+    require => Package['hadir'],
   }
-
-  file {"/etc/hadird.conf":
-    owner => "root",
-    group => "root",
-    mode => 0644,
-    source => "puppet:///modules/openauth/hadird.conf",
-    notify => Service["hadird"],
-    require => Package["hadir"],
-  }
-
-  #Setup local files for failover/HA of the radius service
-  file {"/n/openauth_secrets.live":
+  file { '/n/openauth_secrets.live':
     ensure => link,
     replace => false,
-    target => "/n/openauth/secrets",
-    require => Mount["/n/openauth"]
+    target => '/n/openauth/secrets',
+    require => Mount['/n/openauth'],
   }
-  file { "/n/openauth.local":
-    ensure  => directory,
-    replace => false,
-    backup  => false,
-  }
-  file { "/n/openauth.local/secrets":
-    ensure  => directory,
-    replace => false,
-    backup  => false,
-    require => File["/n/openauth.local"],
-  }
-}
-
-#openauth radius servers needs this, as does web-provisioning-frontend, but not openauth radius clients like login systems/vpn
-class openauth::openauth_mount {
-  file { "/n/openauth":
+  file { '/n/openauth.local':
     ensure => directory,
+    replace => false,
     backup => false,
   }
-  mount { "/n/openauth":
-    device  => "openauth_secure_storage:/openauth/",
-    fstype  => "nfs",
-    ensure  => mounted,
-    options => "rw,nfsvers=3,noacl,soft,intr",
-    atboot  => true,
-    require => File["/n/openauth"]
+  file { '/n/openauth.local/secrets':
+    ensure => directory,
+    replace => false,
+    backup => false,
+  }
+  service { 'hadird':
+    ensure => running,
+    enable => true,
+    require => [
+      Package['hadir'],
+      File['/etc/hadird.conf'],
+      File['/n/openauth_secrets.live'],
+      File['/n/openauth.local/secrets'],
+    ],
   }
 }
