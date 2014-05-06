@@ -3,7 +3,7 @@ bundler_args: ''
 notifications:
   hipchat:
     rooms:
-      secure: GDPfA9BL3qfKVF0pyKuIDF462z3x9s1jY3YhRlti8aCuCkREZpE2SeQ222uwMHCVoVNM06aSAMuLM6TyHcMonF9dxsdmKOG9jukL9N6kgyRFH8VvGelYN00Ss/3hrBnpnsDwbPFY7Hh7ELz6J0vNt5j9TKJwbDO1eqtRNFK7Q18=
+      secure: HO8IqVJxCgOVCVb8k7qPX1HG6i6k9/iGRfyu1n4Tt0egXhjrUqG4MU5lR8ZYjzN0oqeEM9MrDdKwtStm9vJbQZYXI+3g6cToEh936x5kxd2fhFxPYcDP369mZ81r2X4l3V2jXrCFiELAE5xixEiC1BI9wbFW8HoD+5KRcejgtYQ=
 env:
 - PUPPET_VERSION=3.4.2
 - PUPPET_VERSION=3.3.1
