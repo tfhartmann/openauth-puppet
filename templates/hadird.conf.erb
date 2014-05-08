@@ -1,0 +1,24 @@
+#this needs to be safe, valid bash code
+#see `hadir --help' for more info
+
+oaroot=<%= @mount_point -%>/openauth  #CHANGEME
+
+email=rcops-internal@mailman.fas.harvard.edu  #CHANGEME
+
+#---
+
+main_link="$oaroot"_secrets.live
+primary_dir="$oaroot"/secrets
+secondary_dir="$oaroot".local/secrets
+
+max_sync_time=180
+sleep_interval_between_syncs=5
+
+write_probe="date > '$oaroot'/secrets/hadir_write_probe.$(hostname -s).out"
+max_write_probe_time=10
+
+log_file=/var/log/openauth.hadird.log
+command_output_file=/var/log/openauth.hadird.command_output
+timestamp_command_output_file=true
+
+verbose=true

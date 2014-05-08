@@ -1,6 +1,79 @@
+# == Class: openauth
 # Set up OpenAuth RADIUS servers that serve two-factor auth.
-class openauth {
+#
+# === Parameters
+#
+# [mount_point]
+#   Set the default shared mount point. This should be set
+#   to a shared file system and should be changed.
+#   defaults to : undef
+#   ex:
+#   mount_point => '/mnt'
+#
+# [mount_device]
+#   Device providing the mount, this gets passed to the
+#   'device' parameter in the Puppet mount type.
+#   http://docs.puppetlabs.com/references/latest/type.html#mount
+#   defaults to : undef
+#   ex:
+#   mount_device => 'rcstore:/ifs/rc_admin/openauth'
+#
+# [mount_fstype]
+#   The mount type, this gets passed to the
+#   'fstype' parameter in the Puppet mount type.
+#   http://docs.puppetlabs.com/references/latest/type.html#mount
+#   defaults to : undef
+#   ex:
+#   mount_fstype => 'nfs'
+#
+# [mount_options]
+#   The mount options, as the appear in fstab
+#   this gets passed to the 'options' parameter in the Puppet mount type.
+#   http://docs.puppetlabs.com/references/latest/type.html#mount
+#   defaults to : undef
+#   ex:
+#   mount_options => 'rw,nfsvers=3,noacl,soft,intr'
+#
+# [clients]
+#   Clients is an hash of hashs that allows you to define clients
+#   in '/etc/raddb/clients.conf'. defaults to : empty hash { }
+#   ex:
+#     clients => { '10.22.11.123' => {
+#                    'secret'    => 's3cr3t',
+#                    'shortname' => 'hostname' }
+#                }
+#
+# [realms]
+#   Realms is an hash of hashs that allows you to define realms
+#   in '/etc/raddb/realms.conf'. defaults to : empty hash { }
+#   ex:
+#     realms => { 'REALMNAME' => {
+#                    'authhost' => 'LOCAL',
+#                }
+#
+class openauth (
+  $mount_point   = undef,
+  $mount_device  = undef,
+  $mount_fstype  = undef,
+  $mount_options = undef,
+  $realms        = { },
+  $clients       = { },
+  ){
   include openauth::mount
+
+  if ! $realms { fail('$realms must be defined and must be a hash') }
+  if ! $clients { fail('$clients must be defined and must be a hash') }
+
+  # Validate hash
+  if ( $clients ) {
+    if !is_hash($clients){ fail("${clients} is not a valid hash") }
+  }
+  # Validate hash
+  if ( $clients ) {
+    if !is_hash($realms){ fail("${realms} is not a valid hash") }
+  }
+  $clients_title = keys($clients)
+  $realms_title  = keys($realms)
 
   package { 'httpd':
     ensure => installed,
@@ -15,14 +88,14 @@ class openauth {
     ensure => installed,
   }
   file { '/etc/raddb/clients.conf':
-    source  => 'puppet:///modules/openauth/clients.conf',
+    content => template('openauth/clients.conf.erb'),
     owner   => 'root',
     group   => 'root',
     notify  => Service['radiusd'],
     require => Package['freeradius'],
   }
   file { '/etc/raddb/proxy.conf':
-    source  => 'puppet:///modules/openauth/proxy.conf',
+    content => template('openauth/proxy.conf.erb'),
     owner   => 'root',
     group   => 'root',
     notify  => Service['radiusd'],
@@ -80,24 +153,24 @@ class openauth {
     ensure => latest,
   }
   file { '/etc/hadird.conf':
-    source  => 'puppet:///modules/openauth/hadird.conf',
+    content => template('openauth/hadird.conf.erb'),
     owner   => 'root',
     group   => 'root',
     notify  => Service['hadird'],
     require => Package['hadir'],
   }
-  file { '/n/openauth_secrets.live':
+  file { "${mount_point}/openauth_secrets.live":
     ensure  => link,
     replace => false,
-    target  => '/n/openauth/secrets',
-    require => Mount['/n/openauth'],
+    target  => "${mount_point}/openauth/secrets",
+    require => Mount["${mount_point}/openauth"],
   }
-  file { '/n/openauth.local':
+  file { "${mount_point}/openauth.local":
     ensure  => directory,
     replace => false,
     backup  => false,
   }
-  file { '/n/openauth.local/secrets':
+  file { "${mount_point}/openauth.local/secrets":
     ensure  => directory,
     replace => false,
     backup  => false,
@@ -108,8 +181,8 @@ class openauth {
     require => [
       Package['hadir'],
       File['/etc/hadird.conf'],
-      File['/n/openauth_secrets.live'],
-      File['/n/openauth.local/secrets'],
+      File["${mount_point}/openauth_secrets.live"],
+      File["${mount_point}/openauth.local/secrets"],
     ],
   }
 }

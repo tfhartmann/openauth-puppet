@@ -746,7 +746,12 @@ realm LOCAL {
 #realm "~.*\\.example\\.net$" {
 #
 #}
-realm YOUR_REALM {
-        authhost=LOCAL
+
+<% @realms_title.sort.each do |realm| -%>
+realm <%= realm -%> {
+<% @realms[realm].sort.each do |key,value| -%>
+       <%= key -%> = <%= value %>
+<% end -%>
 }
+<% end %>
 

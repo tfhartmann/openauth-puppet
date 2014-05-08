@@ -108,12 +108,12 @@ client 127.0.0.1 {
 #       login       = !root
 #       password    = someadminpas
 #}
-client login01 {
-       secret = some_sec
-       shortname = login01
+
+<% @clients_title.sort.each do |client| -%>
+client <%= client -%> {
+<% @clients[client].sort.each do |key,value| -%>
+       <%= key -%> = <%= value %>
+<% end -%>
 }
-client login02 {
-       secret = some_sec
-       shortname = login02
-}
+<% end %>
 
