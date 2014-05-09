@@ -1,5 +1,6 @@
 openauth-puppet
 ===============
+[![Build Status](https://travis-ci.org/fasrc/puppet-openauth.svg?branch=master)](https://travis-ci.org/fasrc/puppet-openauth)
 
 FASRC Openauth Radius Server Puppet Module
 
